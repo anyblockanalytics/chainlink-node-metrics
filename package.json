@@ -1,0 +1,35 @@
+{
+  "name": "chainlink-node-metrics",
+  "version": "0.1.0",
+  "description": "Gather metrics from chainlink nodes for ingestion into monitoring tools",
+  "main": "index.js",
+  "scripts": {
+    "start": "node -r dotenv/config index.js",
+    "dev": "nodemon -r dotenv/config index.js",
+    "test": "eslint ./index.js"
+  },
+  "author": "Anyblock Analytics GmbH <tech@anyblockanalytics.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+git@github.com:anyblockanalytics/chainlink-node-metrics.git"
+  },
+  "keywords": [
+    "ethereum",
+    "blockchain",
+    "influxdb",
+    "telegraf",
+    "metrics",
+    "chainlink"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "express": "4.17.1",
+    "got": "10.0.4",
+    "tough-cookie": "3.0.1"
+  },
+  "devDependencies": {
+    "dotenv": "8.2.0",
+    "eslint": "6.7.2",
+    "nodemon": "2.0.2"
+  }
+}
