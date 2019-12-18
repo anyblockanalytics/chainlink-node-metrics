@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node -r dotenv/config index.js",
     "dev": "nodemon -r dotenv/config index.js",
-    "test": "eslint ./index.js"
+    "test": "eslint ./*.js"
   },
   "author": "Anyblock Analytics GmbH <tech@anyblockanalytics.com>",
   "repository": {
@@ -23,6 +23,7 @@
   ],
   "license": "MIT",
   "dependencies": {
+    "bunyan": "1.8.12",
     "express": "4.17.1",
     "got": "10.0.4",
     "tough-cookie": "3.0.1"
