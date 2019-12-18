@@ -1,7 +1,7 @@
 const packageJson = require('./package.json')
 const express = require('express')
 const logger = require('bunyan').createLogger({ name: packageJson.name, level: process.env.LOG_LEVEL || 'info' })
-const { clAuthenticate, clBalances, clConfig } = require('./chainlink')
+const { clAuthenticate, clBalances, clConfig, clRunStats } = require('./chainlink')
 const app = express()
 
 const config = {
@@ -14,6 +14,7 @@ const config = {
         email: process.env.CHAINLINK_EMAIL,
         password: process.env.CHAINLINK_PASSWORD
     },
+    trackRuns: process.env.TRACK_RUNS && process.env.TRACK_RUNS === 'true' ? true : false,
     meta: {
         measurement: process.env.MEASUREMENT || 'chainlink-node',
         tags: { // This is all just cleanup of a simple key value list
@@ -52,6 +53,8 @@ app.get('/ping', (req, res) => res.sendStatus(200))
 
 // Render InfluxDB formatted metrics
 app.get('/influxdb', async (req, res) => {
+    const start = Date.now()
+
     try {
         try { // Fail silently, because in redundant configurations one node will always fail
             await clAuthenticate(config.chainlink)
@@ -77,12 +80,28 @@ app.get('/influxdb', async (req, res) => {
             ' ',
             `eth=${balances.eth}`,
             `,link=${balances.link}`,
-            `,gasPrice=${configVars.gasPrice}`,
+            `,gasPrice=${configVars.gasPrice}`
+        ]
+
+        // Only fetch run statistics if enabled. This might take some time
+        if (config.trackRuns) {
+            const runStats = await clRunStats(config.chainlink)
+
+            logger.trace({ runStats })
+
+            output.push(...[
+                `,specs=${runStats.specCount}i`,
+                `,runs=${runStats.totalRunCount}i`
+            ])
+        }
+
+        output.push(...[
             ' ',
             Date.now() * 1000000 // Fake nanoseconds. This resolution is not needed for our usecase.
-        ].join('')
+        ])
 
-        res.send(output)
+        res.send(output.join(''))
+        logger.trace('Took %sms', Date.now() - start)
     }
     catch (err) {
         logger.error({ err }, (err && err.response && err.response.body) || err.message)

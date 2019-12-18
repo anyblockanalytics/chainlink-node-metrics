@@ -48,6 +48,27 @@ async function getConfig(config) {
     }
 }
 
+async function getRunStats(config) {
+    const specs = await got(`${config.url}/v2/specs`, { cookieJar }).json()
+
+    const result = {
+        specCount: specs.meta.count,
+        runCounts: {},
+        totalRunCount: 0
+    }
+
+    const specIds = specs.data.map(v => v.id)
+
+    const runs = await Promise.all(specIds.map(v => got(`${config.url}/v2/runs?jobSpecId=${v}`, { cookieJar }).json()))
+    for (let i = 0; i < specIds.length; i++) {
+        result.totalRunCount += runs[i].meta.count
+        result.runCounts[specIds[i]] = runs[i].meta.count
+    }
+
+    return result
+}
+
 exports.clAuthenticate = authenticate
 exports.clBalances = getBalances
 exports.clConfig = getConfig
+exports.clRunStats = getRunStats
