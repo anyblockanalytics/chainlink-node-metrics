@@ -108,7 +108,7 @@ app.get('/influxdb', async (req, res) => {
             for (const jobId of Object.keys(runStats.runCounts)) {
                 output.push(...[
                     '\n',
-                    config.meta.measurement,
+                    `${config.meta.measurement}-job`,
                     config.meta.tagString ? `,${config.meta.tagString}` : '',
                     `,account=${configVars.account}`,
                     `,oracle=${configVars.oracleContract}`,
