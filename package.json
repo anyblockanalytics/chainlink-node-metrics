@@ -1,11 +1,11 @@
 {
   "name": "chainlink-node-metrics",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Gather metrics from chainlink nodes for ingestion into monitoring tools",
   "main": "index.js",
   "scripts": {
     "start": "node -r dotenv/config index.js",
-    "dev": "nodemon -r dotenv/config index.js",
+    "dev": "nodemon -r dotenv/config index.js | bunyan -L",
     "test": "eslint ./*.js"
   },
   "author": "Anyblock Analytics GmbH <tech@anyblockanalytics.com>",

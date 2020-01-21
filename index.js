@@ -12,7 +12,9 @@ const config = {
     chainlink: {
         url: process.env.CHAINLINK_URL || 'http://localhost:6688',
         email: process.env.CHAINLINK_EMAIL,
-        password: process.env.CHAINLINK_PASSWORD
+        password: process.env.CHAINLINK_PASSWORD,
+        pageSize: parseInt(process.env.CHAINLINK_PAGE_SIZE) || 5000,
+        staleAge: parseInt(process.env.CHAINLINK_STALE_AGE) || (1000 * 60 * 30)
     },
     trackRuns: process.env.TRACK_RUNS && process.env.TRACK_RUNS === 'true' ? true : false,
     meta: {
@@ -93,12 +95,44 @@ app.get('/influxdb', async (req, res) => {
                 `,specs=${runStats.specCount}i`,
                 `,runs=${runStats.totalRunCount}i`
             ])
-        }
 
-        output.push(...[
-            ' ',
-            Date.now() * 1000000 // Fake nanoseconds. This resolution is not needed for our usecase.
-        ])
+            for (const status of Object.keys(runStats.totalStatusCounts)) {
+                output.push(`,status-${status.replace(/[^a-z]/g, '-').replace(/-+/g, '-')}=${runStats.totalStatusCounts[status]}i`)
+            }
+
+            output.push(...[
+                ' ',
+                Date.now() * 1000000 // Fake nanoseconds. This resolution is not needed for our usecase.
+            ])
+
+            for (const jobId of Object.keys(runStats.runCounts)) {
+                output.push(...[
+                    '\n',
+                    config.meta.measurement,
+                    config.meta.tagString ? `,${config.meta.tagString}` : '',
+                    `,account=${configVars.account}`,
+                    `,oracle=${configVars.oracleContract}`,
+                    `,job=${jobId}`,
+                    ' ',
+                    `runs=${runStats.runCounts[jobId]}`,
+                ])
+
+                for (const status of Object.keys(runStats.statusCounts[jobId])) {
+                    output.push(`,status-${status.replace(/[^a-z]/g, '-').replace(/-+/g, '-')}=${runStats.statusCounts[jobId][status]}i`)
+                }
+
+                output.push(...[
+                    ' ',
+                    Date.now() * 1000000 // Fake nanoseconds. This resolution is not needed for our usecase.
+                ])
+            }
+        }
+        else {
+            output.push(...[
+                ' ',
+                Date.now() * 1000000 // Fake nanoseconds. This resolution is not needed for our usecase.
+            ])
+        }
 
         res.send(output.join(''))
         logger.trace('Took %sms', Date.now() - start)

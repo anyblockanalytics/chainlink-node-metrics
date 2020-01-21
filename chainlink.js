@@ -1,4 +1,5 @@
 const got = require('got')
+const logger = require('bunyan').createLogger({ name: 'chainlink', level: process.env.LOG_LEVEL || 'info' })
 const { CookieJar } = require('tough-cookie')
 const cookieJar = new CookieJar()
 
@@ -48,21 +49,77 @@ async function getConfig(config) {
     }
 }
 
+async function getAllRuns(config, jobSpecId, pageSize = 5000) {
+    const data = []
+
+    let runs = await got(`${config.url}/v2/runs?jobSpecId=${jobSpecId}&size=${pageSize}`, { cookieJar }).json()
+    data.push(...runs.data)
+
+    while (runs.links && runs.links.next) {
+        logger.trace({ next: runs.links.next}, 'Paginating')
+
+        runs = await got(`${config.url}${runs.links.next}`, { cookieJar }).json()
+        data.push(...runs.data)
+    }
+
+    return {
+        data,
+        meta: {
+            count: data.length
+        }
+    }
+}
+
 async function getRunStats(config) {
     const specs = await got(`${config.url}/v2/specs`, { cookieJar }).json()
 
     const result = {
         specCount: specs.meta.count,
         runCounts: {},
-        totalRunCount: 0
+        statusCounts: {},
+        totalRunCount: 0,
+        totalStatusCounts: {}
     }
 
     const specIds = specs.data.map(v => v.id)
 
-    const runs = await Promise.all(specIds.map(v => got(`${config.url}/v2/runs?jobSpecId=${v}`, { cookieJar }).json()))
+    logger.trace({ specIds })
+
+    const runs = await Promise.all(specIds.map(v => getAllRuns(config, v, config.pageSize)))
+
     for (let i = 0; i < specIds.length; i++) {
         result.totalRunCount += runs[i].meta.count
         result.runCounts[specIds[i]] = runs[i].meta.count
+
+        if (!result.statusCounts[specIds[i]]) {
+            result.statusCounts[specIds[i]] = {}
+        }
+
+        for (let j = 0; j < runs[i].data.length; j++) {
+            if (!result.totalStatusCounts[runs[i].data[j].attributes.status]) {
+                result.totalStatusCounts[runs[i].data[j].attributes.status] = 0
+            }
+
+            if (!result.statusCounts[specIds[i]][runs[i].data[j].attributes.status]) {
+                result.statusCounts[specIds[i]][runs[i].data[j].attributes.status] = 0
+            }
+
+            result.totalStatusCounts[runs[i].data[j].attributes.status]++
+            result.statusCounts[specIds[i]][runs[i].data[j].attributes.status]++
+
+            if (runs[i].data[j].attributes.status != 'errored' && runs[i].data[j].attributes.status != 'completed' && (Date.now() - new Date(runs[i].data[j].attributes.createdAt).getTime()) > config.staleAge) {
+                if (!result.totalStatusCounts['stale']) {
+                    result.totalStatusCounts['stale'] = 0
+                }
+
+                if (!result.statusCounts[specIds[i]]['stale']) {
+                    result.statusCounts[specIds[i]]['stale'] = 0
+                }
+
+                result.totalStatusCounts['stale']++
+                result.statusCounts[specIds[i]]['stale']++
+            }
+        }
     }
 
     return result
