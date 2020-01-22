@@ -17,6 +17,7 @@ const config = {
         staleAge: parseInt(process.env.CHAINLINK_STALE_AGE) || (1000 * 60 * 30)
     },
     trackRuns: process.env.TRACK_RUNS && process.env.TRACK_RUNS === 'true' ? true : false,
+    trackJobs: process.env.TRACK_JOBS && process.env.TRACK_JOBS === 'true' ? true : false,
     meta: {
         measurement: process.env.MEASUREMENT || 'chainlink-node',
         tags: { // This is all just cleanup of a simple key value list
@@ -105,26 +106,28 @@ app.get('/influxdb', async (req, res) => {
                 Date.now() * 1000000 // Fake nanoseconds. This resolution is not needed for our usecase.
             ])
 
-            for (const jobId of Object.keys(runStats.runCounts)) {
-                output.push(...[
-                    '\n',
-                    `${config.meta.measurement}-job`,
-                    config.meta.tagString ? `,${config.meta.tagString}` : '',
-                    `,account=${configVars.account}`,
-                    `,oracle=${configVars.oracleContract}`,
-                    `,job=${jobId}`,
-                    ' ',
-                    `runs=${runStats.runCounts[jobId]}`,
-                ])
+            if (config.trackJobs) {
+                for (const jobId of Object.keys(runStats.runCounts)) {
+                    output.push(...[
+                        '\n',
+                        `${config.meta.measurement}-job`,
+                        config.meta.tagString ? `,${config.meta.tagString}` : '',
+                        `,account=${configVars.account}`,
+                        `,oracle=${configVars.oracleContract}`,
+                        `,job=${jobId}`,
+                        ' ',
+                        `runs=${runStats.runCounts[jobId]}`,
+                    ])
 
-                for (const status of Object.keys(runStats.statusCounts[jobId])) {
-                    output.push(`,status-${status.replace(/[^a-z]/g, '-').replace(/-+/g, '-')}=${runStats.statusCounts[jobId][status]}i`)
+                    for (const status of Object.keys(runStats.statusCounts[jobId])) {
+                        output.push(`,status-${status.replace(/[^a-z]/g, '-').replace(/-+/g, '-')}=${runStats.statusCounts[jobId][status]}i`)
+                    }
+
+                    output.push(...[
+                        ' ',
+                        Date.now() * 1000000 // Fake nanoseconds. This resolution is not needed for our usecase.
+                    ])
                 }
-
-                output.push(...[
-                    ' ',
-                    Date.now() * 1000000 // Fake nanoseconds. This resolution is not needed for our usecase.
-                ])
             }
         }
         else {
