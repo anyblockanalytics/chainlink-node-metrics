@@ -13,11 +13,12 @@ const config = {
         url: process.env.CHAINLINK_URL || 'http://localhost:6688',
         email: process.env.CHAINLINK_EMAIL,
         password: process.env.CHAINLINK_PASSWORD,
-        pageSize: parseInt(process.env.CHAINLINK_PAGE_SIZE) || 5000,
+        pageSize: parseInt(process.env.CHAINLINK_PAGE_SIZE) || 10000,
         staleAge: parseInt(process.env.CHAINLINK_STALE_AGE) || (1000 * 60 * 30)
     },
     trackRuns: process.env.TRACK_RUNS && process.env.TRACK_RUNS === 'true' ? true : false,
     trackJobs: process.env.TRACK_JOBS && process.env.TRACK_JOBS === 'true' ? true : false,
+    extendedMetricsInterval: parseInt(process.env.EXTENDED_METRICS_INTERVAL) || (1000 * 60),
     meta: {
         measurement: process.env.MEASUREMENT || 'chainlink-node',
         tags: { // This is all just cleanup of a simple key value list
@@ -54,6 +55,9 @@ app.get('/', (req, res) => res.json({name: packageJson.name, version: packageJso
 // Ping endpoint that just returns OK
 app.get('/ping', (req, res) => res.sendStatus(200))
 
+let nextExtendedMetricsTimestamp = 0
+let extendedMetricsRunning = false
+
 // Render InfluxDB formatted metrics
 app.get('/influxdb', async (req, res) => {
     const start = Date.now()
@@ -87,7 +91,10 @@ app.get('/influxdb', async (req, res) => {
         ]
 
         // Only fetch run statistics if enabled. This might take some time
-        if (config.trackRuns) {
+        if (config.trackRuns && !extendedMetricsRunning && nextExtendedMetricsTimestamp < Date.now()) {
+
+            extendedMetricsRunning = true
+
             const runStats = await clRunStats(config.chainlink)
 
             logger.trace({ runStats })
@@ -129,12 +136,22 @@ app.get('/influxdb', async (req, res) => {
                     ])
                 }
             }
+
+            extendedMetricsRunning = false // eslint-disable-line require-atomic-updates
+            nextExtendedMetricsTimestamp = Date.now() + config.extendedMetricsInterval // eslint-disable-line require-atomic-updates
         }
         else {
             output.push(...[
                 ' ',
                 Date.now() * 1000000 // Fake nanoseconds. This resolution is not needed for our usecase.
             ])
+
+            if (extendedMetricsRunning) {
+                logger.trace('Extended metrics skipped because already running')
+            }
+            else if (nextExtendedMetricsTimestamp >= Date.now()) {
+                logger.trace('Extended metrics skipped because waiting interval is not over yet')
+            }
         }
 
         res.send(output.join(''))

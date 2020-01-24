@@ -49,7 +49,7 @@ async function getConfig(config) {
     }
 }
 
-async function getAllRuns(config, jobSpecId, pageSize = 5000) {
+async function getAllRuns(config, jobSpecId, pageSize = 10000) {
     const data = []
 
     let runs = await got(`${config.url}/v2/runs?jobSpecId=${jobSpecId}&size=${pageSize}`, { cookieJar }).json()
