@@ -91,7 +91,7 @@ app.get('/influxdb', async (req, res) => {
         ]
 
         // Only fetch run statistics if enabled. This might take some time
-        if (config.trackRuns && !extendedMetricsRunning && nextExtendedMetricsTimestamp < Date.now()) {
+        if (config.trackRuns && (!extendedMetricsRunning || (Date.now() - nextExtendedMetricsTimestamp) > 300000) && nextExtendedMetricsTimestamp < Date.now()) {
 
             extendedMetricsRunning = true
 
