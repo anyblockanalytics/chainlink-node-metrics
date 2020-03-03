@@ -2,6 +2,7 @@ const got = require('got')
 const logger = require('bunyan').createLogger({ name: 'chainlink', level: process.env.LOG_LEVEL || 'info' })
 const { CookieJar } = require('tough-cookie')
 const cookieJar = new CookieJar()
+const mapLimit = require('async/mapLimit')
 
 const WEI = Math.pow(10, 18)
 const GWEI = Math.pow(10, 9)
@@ -49,7 +50,7 @@ async function getConfig(config) {
     }
 }
 
-async function getAllRuns(config, jobSpecId, pageSize = 10000) {
+async function getAllRuns(config, jobSpecId, pageSize = 2500) {
     const data = []
 
     let runs = await got(`${config.url}/v2/runs?jobSpecId=${jobSpecId}&size=${pageSize}`, { cookieJar }).json()
@@ -62,6 +63,8 @@ async function getAllRuns(config, jobSpecId, pageSize = 10000) {
         data.push(...runs.data)
     }
 
+    logger.trace('Completed %s', jobSpecId)
+
     return {
         data,
         meta: {
@@ -71,7 +74,7 @@ async function getAllRuns(config, jobSpecId, pageSize = 10000) {
 }
 
 async function getRunStats(config) {
-    const specs = await got(`${config.url}/v2/specs`, { cookieJar }).json()
+    const specs = await got(`${config.url}/v2/specs?size=2500`, { cookieJar }).json()
 
     const result = {
         specCount: specs.meta.count,
@@ -85,7 +88,7 @@ async function getRunStats(config) {
 
     logger.trace({ specIds })
 
-    const runs = await Promise.all(specIds.map(v => getAllRuns(config, v, config.pageSize)))
+    const runs = await mapLimit(specIds, 4, async spec => getAllRuns(config, spec, config.pageSize))
 
     for (let i = 0; i < specIds.length; i++) {
         result.totalRunCount += runs[i].meta.count

@@ -13,12 +13,12 @@ const config = {
         url: process.env.CHAINLINK_URL || 'http://localhost:6688',
         email: process.env.CHAINLINK_EMAIL,
         password: process.env.CHAINLINK_PASSWORD,
-        pageSize: parseInt(process.env.CHAINLINK_PAGE_SIZE) || 10000,
+        pageSize: parseInt(process.env.CHAINLINK_PAGE_SIZE) || 2500,
         staleAge: parseInt(process.env.CHAINLINK_STALE_AGE) || (1000 * 60 * 30)
     },
     trackRuns: process.env.TRACK_RUNS && process.env.TRACK_RUNS === 'true' ? true : false,
     trackJobs: process.env.TRACK_JOBS && process.env.TRACK_JOBS === 'true' ? true : false,
-    extendedMetricsInterval: parseInt(process.env.EXTENDED_METRICS_INTERVAL) || (1000 * 60),
+    extendedMetricsInterval: Math.round(parseInt(process.env.EXTENDED_METRICS_INTERVAL) || (1000 * 60 * 1.5)),
     meta: {
         measurement: process.env.MEASUREMENT || 'chainlink-node',
         tags: { // This is all just cleanup of a simple key value list
