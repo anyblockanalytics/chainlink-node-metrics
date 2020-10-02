@@ -1,6 +1,6 @@
 {
   "name": "chainlink-node-metrics",
-  "version": "0.3.5",
+  "version": "0.4.0",
   "description": "Gather metrics from chainlink nodes for ingestion into monitoring tools",
   "main": "index.js",
   "scripts": {
@@ -24,14 +24,14 @@
   "license": "MIT",
   "dependencies": {
     "async": "3.2.0",
-    "bunyan": "1.8.12",
+    "bunyan": "1.8.14",
     "express": "4.17.1",
-    "got": "10.0.4",
-    "tough-cookie": "3.0.1"
+    "got": "11.7.0",
+    "tough-cookie": "4.0.0"
   },
   "devDependencies": {
     "dotenv": "8.2.0",
-    "eslint": "6.7.2",
-    "nodemon": "2.0.2"
+    "eslint": "7.10.0",
+    "nodemon": "2.0.4"
   }
 }
