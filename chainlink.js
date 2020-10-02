@@ -35,7 +35,7 @@ async function getBalances(config) {
 async function getConfig(config) {
     const configResult = await got(`${config.url}/v2/config`, { cookieJar }).json()
 
-    if (!configResult || !configResult.data || !configResult.data.type || configResult.data.type != 'configWhitelists') {
+    if (!configResult || !configResult.data) {
         const err = new Error('Invalid Config Result')
         err.result = configResult
         throw err
