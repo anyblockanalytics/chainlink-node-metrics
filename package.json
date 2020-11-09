@@ -1,6 +1,6 @@
 {
   "name": "chainlink-node-metrics",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Gather metrics from chainlink nodes for ingestion into monitoring tools",
   "main": "index.js",
   "scripts": {
