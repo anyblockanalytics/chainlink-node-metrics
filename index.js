@@ -82,7 +82,7 @@ app.get('/influxdb', async (req, res) => {
         const output = [
             config.meta.measurement,
             config.meta.tagString ? `,${config.meta.tagString}` : '',
-            `,account=${configVars.account}`,
+            `,account=${balances.account}`,
             `,oracle=${configVars.oracleContract}`,
             ' ',
             `eth=${balances.eth}`,

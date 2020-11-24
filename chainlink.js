@@ -35,6 +35,8 @@ async function getBalances(config) {
 async function getConfig(config) {
     const configResult = await got(`${config.url}/v2/config`, { cookieJar }).json()
 
+    // logger.trace({ configResult })
+
     if (!configResult || !configResult.data) {
         const err = new Error('Invalid Config Result')
         err.result = configResult
@@ -42,7 +44,6 @@ async function getConfig(config) {
     }
 
     return {
-        account: configResult.data.attributes.accountAddress,
         chainId: configResult.data.attributes.ethChainId,
         linkContract: configResult.data.attributes.linkContractAddress,
         oracleContract: configResult.data.attributes.oracleContractAddress,
