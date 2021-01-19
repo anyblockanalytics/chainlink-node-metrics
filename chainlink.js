@@ -18,7 +18,7 @@ async function authenticate(config) {
 }
 
 async function getBalances(config) {
-    const balanceResult = await got(`${config.url}/v2/user/balances`, { cookieJar }).json()
+    const balanceResult = await got(`${config.url}/v2/keys/eth`, { cookieJar }).json()
     if (!balanceResult || !balanceResult.data || !balanceResult.data.length) {
         const err = new Error('Invalid Balances Result')
         err.result = balanceResult
