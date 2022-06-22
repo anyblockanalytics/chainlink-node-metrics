@@ -26,7 +26,7 @@
     "async": "3.2.0",
     "bunyan": "1.8.14",
     "express": "4.17.1",
-    "got": "11.7.0",
+    "got": "11.8.5",
     "tough-cookie": "4.0.0"
   },
   "devDependencies": {
